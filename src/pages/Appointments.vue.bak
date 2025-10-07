@@ -1,0 +1,144 @@
+&lt;script setup lang="ts">
+import { ref, onMounted, computed } from 'vue';
+import type { Appointment, AppointmentStatus } from '../lib/appointments';
+import { listAppointments, cancelAppointment, confirmAppointment, completeAppointment } from '../lib/appointments';
+import { useAuth } from '../lib/auth';
+import PrimaryButton from '../components/PrimaryButton.vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const auth = useAuth();
+const appointments = ref<Appointment[]>([]);
+const loading = ref(false);
+const error = ref('');
+const processingId = ref<number | null>(null);
+
+const statusColors = {
+  PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-800' },
+  COMPLETED: { bg: 'bg-green-100', text: 'text-green-800' },
+  CANCELLED: { bg: 'bg-red-100', text: 'text-red-800' }
+} as const;
+
+const sortedAppointments = computed(() => {
+  return [...appointments.value].sort((a, b) => {
+    // Sort by status: PENDING first, then CONFIRMED, then COMPLETED, then CANCELLED
+    const statusOrder = { PENDING: 0, CONFIRMED: 1, COMPLETED: 2, CANCELLED: 3 };
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+    if (statusDiff !== 0) return statusDiff;
+    
+    // Then sort by date (most recent first)
+    return new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime();
+  });
+});
+
+async function load() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const res = await listAppointments(0, 50);
+    appointments.value = res.content;
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Lấy danh sách thất bại';
+    console.error('Error loading appointments:', e);
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function handleAction(
+  id: number, 
+  action: (id: number) => Promise<Appointment>,
+  confirmMessage: string,
+  errorMessage: string
+) {
+  if (processingId.value) return;
+  
+  const ok = confirm(confirmMessage);
+  if (!ok) return;
+  
+  processingId.value = id;
+  error.value = '';
+  
+  try {
+    await action(id);
+    await load();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : errorMessage;
+    console.error(`Error ${errorMessage}:`, e);
+  } finally {
+    processingId.value = null;
+  }
+}
+
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+}
+
+function canManageAppointment(appointment: Appointment) {
+  if (!auth.isAuthenticated.value) return false;
+  if (auth.isAdmin.value) return true;
+  if (auth.isDoctor.value) return appointment.doctorId === auth.user.value?.id;
+  return appointment.patientId === auth.user.value?.id;
+}
+
+function getAvailableActions(status: AppointmentStatus) {
+  switch (status) {
+    case 'PENDING':
+      return ['confirm', 'cancel'];
+    case 'CONFIRMED':
+      return ['complete', 'cancel'];
+    case 'COMPLETED':
+      return [];
+    case 'CANCELLED':
+      return [];
+    default:
+      return [];
+  }
+}
+
+onMounted(() => {
+  if (!auth.isAuthenticated.value) {
+    router.push('/login');
+    return;
+  }
+  load();
+});
+</script>
+
+<template>
+  <div style="padding:16px;">
+    <h2>Quản lý Appointment</h2>
+    <PrimaryButton @click="$router.push('/appointments/create')">Tạo mới</PrimaryButton>
+    <div v-if="error" style="color:#c00;margin-top:8px;">{{ error }}</div>
+    <div v-if="loading">Đang tải...</div>
+    <table v-if="!loading && items.length" style="width:100%;margin-top:12px;border-collapse:collapse;">
+      <thead>
+        <tr style="text-align:left;border-bottom:1px solid #ddd;"><th>Id</th><th>Patient</th><th>Doctor</th><th>Time</th><th>Fee</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr v-for="it in items" :key="it.appointmentId" style="border-bottom:1px solid #f0f0f0;">
+          <td>{{ it.appointmentId }}</td>
+          <td>{{ it.patientName }}</td>
+          <td>{{ it.doctorId }}</td>
+          <td>{{ it.appointmentDate }}</td>
+          <td>{{ it.fee }}</td>
+          <td style="display:flex;gap:6px;">
+            <button @click="onCancel(it.appointmentId)">Hủy</button>
+            <button @click="onConfirm(it.appointmentId)">Xác nhận</button>
+            <button @click="onComplete(it.appointmentId)">Hoàn thành</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-else-if="!loading" style="margin-top:12px;color:#666;">Không có appointment</div>
+  </div>
+</template>
+
