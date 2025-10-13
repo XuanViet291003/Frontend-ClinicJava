@@ -1,73 +1,65 @@
-import api from './api';
-
-export type NotificationType = 'APPOINTMENT' | 'MEDICAL_RECORD' | 'SYSTEM';
+import api from './api'
 
 export interface Notification {
-  id: number;
-  userId: number;
-  title: string;
-  message: string;
-  type: NotificationType;
-  read: boolean;
-  createdDate: string;
-  readDate?: string;
+  id: number
+  title: string
+  message: string
+  type: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR'
+  isRead: boolean
+  userId?: number
+  createdAt: string
+  updatedAt: string
 }
 
-export interface NotificationListResponse {
-  content: Notification[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+export interface BroadcastNotificationRequest {
+  title: string
+  message: string
+  type: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR'
 }
 
-// Get notifications for current user
-export async function getMyNotifications(
-  page = 0,
-  size = 20
-): Promise<NotificationListResponse> {
-  const res = await api.get('/v1/notification/my', {
-    params: { page, size }
-  });
-  return res.data;
+// Get my notifications
+export async function getNotifications(): Promise<Notification[]> {
+  const response = await api.get<Notification[]>('/v1/notifications/my')
+  return response.data
 }
 
-// Get unread notifications count
-export async function getUnreadCount(): Promise<number> {
-  const res = await api.get('/v1/notification/unread-count');
-  return res.data;
-}
-
-// Mark a notification as read
-export async function markAsRead(id: number): Promise<void> {
-  await api.put(`/v1/notification/read/${id}`);
+// Mark notification as read
+export async function markNotificationAsRead(id: number): Promise<void> {
+  await api.put(`/v1/notifications/read/${id}`)
 }
 
 // Mark all notifications as read
-export async function markAllAsRead(): Promise<void> {
-  await api.put('/v1/notification/read-all');
+export async function markAllNotificationsAsRead(): Promise<void> {
+  await api.put('/v1/notifications/read-all')
 }
 
-// Delete a notification
+// Send broadcast notification (ADMIN only)
+export async function sendBroadcastNotification(data: BroadcastNotificationRequest): Promise<void> {
+  await api.post('/v1/notifications/broadcast', data)
+}
+
+// Get unread notification count
+export async function getUnreadNotificationCount(): Promise<number> {
+  const notifications = await getNotifications()
+  return notifications.filter(n => !n.isRead).length
+}
+
+// Delete notification
 export async function deleteNotification(id: number): Promise<void> {
-  await api.delete(`/v1/notification/${id}`);
+  await api.delete(`/v1/notifications/${id}`)
 }
 
-// Delete all read notifications
-export async function deleteAllRead(): Promise<void> {
-  await api.delete('/v1/notification/read');
+// Get notifications by type
+export async function getNotificationsByType(type: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR'): Promise<Notification[]> {
+  const notifications = await getNotifications()
+  return notifications.filter(n => n.type === type)
 }
 
-// Subscribe to server-sent events for real-time notifications
-export function subscribeToNotifications(onNotification: (notification: Notification) => void) {
-  const eventSource = new EventSource('/v1/notification/subscribe');
+// Get recent notifications (last 7 days)
+export async function getRecentNotifications(): Promise<Notification[]> {
+  const notifications = await getNotifications()
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   
-  eventSource.onmessage = (event) => {
-    const notification = JSON.parse(event.data) as Notification;
-    onNotification(notification);
-  };
-
-  return {
-    unsubscribe: () => eventSource.close()
-  };
+  return notifications.filter(n => new Date(n.createdAt) > sevenDaysAgo)
 }

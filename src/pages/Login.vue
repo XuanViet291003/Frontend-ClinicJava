@@ -15,7 +15,7 @@ const success = ref('');
 
 async function submit() {
   if (!username.value || !password.value) {
-    error.value = 'Vui lòng nhập username và mật khẩu';
+    error.value = 'Vui lòng nhập username và Password';
     return;
   }
 
@@ -52,7 +52,10 @@ async function submit() {
       <p v-if="error" style="color:#c00;margin:0;">{{ error }}</p>
     </div>
     <template #footer>
-      <span>Chưa có tài khoản? <router-link to="/register">Đăng ký</router-link></span>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <span>Chưa có tài khoản? <router-link to="/register">Đăng ký</router-link></span>
+        <span style="margin-left:auto">Đăng nhập cho quản trị viên? <router-link to="/admin/login">Admin</router-link></span>
+      </div>
     </template>
   </AuthCard>
   

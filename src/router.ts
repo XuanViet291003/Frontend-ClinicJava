@@ -160,7 +160,12 @@ router.beforeEach((to, from, next) => {
   // Check if route requires auth
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!user) {
-      next({ name: 'login' })
+      // If route requires admin role, send to admin-specific login page
+      if (to.meta.role === 'ADMIN') {
+        next({ name: 'admin-login' })
+      } else {
+        next({ name: 'login' })
+      }
       return
     }
 

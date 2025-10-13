@@ -62,7 +62,7 @@ const loading = ref(false);
 async function load() {
   loading.value = true;
   try {
-    const res = await searchMedicalRecords({}, 0, 20);
+    const res = await searchMedicalRecords('');
     const data = (res as any)?.content || res;
     records.value = Array.isArray(data) ? data : (data?.content || []);
   } finally {

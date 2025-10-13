@@ -1,95 +1,86 @@
-import api from './api';
+import api from './api'
 
 export interface MedicalRecord {
-  id: number;
-  patientId: number;
-  patientName: string;
-  doctorId: number;
-  doctorName: string;
-  appointmentId?: number;
-  symptoms: string;
-  diagnosis: string;
-  treatment: string;
-  recordDate: string;
-  isActive: boolean;
-  createdBy: number;
-  createdDate: string;
-  modifiedBy?: number;
-  modifiedDate?: string;
+  id: number
+  patientId: number
+  doctorId: number
+  appointmentId?: number
+  symptoms: string
+  diagnosis: string
+  treatment: string
+  notes?: string
+  patientName?: string
+  doctorName?: string
+  createdAt: string
+  updatedAt: string
 }
 
-export interface MedicalRecordCreateRequest {
-  patientId: number;
-  appointmentId?: number;
-  symptoms: string;
-  diagnosis: string;
-  treatment: string;
+export interface CreateMedicalRecordRequest {
+  patientId: number
+  appointmentId?: number
+  symptoms: string
+  diagnosis: string
+  treatment: string
+  notes?: string
 }
 
-export interface MedicalRecordUpdateRequest {
-  symptoms?: string;
-  diagnosis?: string;
-  treatment?: string;
-  isActive?: boolean;
+export interface UpdateMedicalRecordRequest {
+  symptoms?: string
+  diagnosis?: string
+  treatment?: string
+  notes?: string
 }
 
-export interface MedicalRecordListResponse {
-  content: MedicalRecord[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+// Get medical records (role-based filtering handled by backend)
+export async function getMedicalRecords(): Promise<MedicalRecord[]> {
+  const response = await api.get<MedicalRecord[]>('/v1/medical-records/list')
+  return response.data
 }
 
-export interface MedicalRecordSearchCriteria {
-  patientId?: number;
-  doctorId?: number;
-  fromDate?: string;
-  toDate?: string;
-  isActive?: boolean;
+// Create new medical record (DOCTOR only)
+export async function createMedicalRecord(data: CreateMedicalRecordRequest): Promise<MedicalRecord> {
+  const response = await api.post<MedicalRecord>('/v1/medical-records/create', data)
+  return response.data
 }
 
-export async function getMedicalRecordById(id: number): Promise<MedicalRecord> {
-  const res = await api.get(`/v1/medical-records/${id}`);
-  return res.data;
+// Update medical record (DOCTOR only)
+export async function updateMedicalRecord(id: number, data: UpdateMedicalRecordRequest): Promise<MedicalRecord> {
+  const response = await api.put<MedicalRecord>(`/v1/medical-records/update/${id}`, data)
+  return response.data
 }
 
+// Get medical records by patient (DOCTOR/ADMIN only)
 export async function getMedicalRecordsByPatient(patientId: number): Promise<MedicalRecord[]> {
-  const res = await api.get(`/v1/medical-records/patient/${patientId}`);
-  return res.data;
+  const response = await api.get<MedicalRecord[]>(`/v1/medical-records/patient/${patientId}`)
+  return response.data
 }
 
-export async function createMedicalRecord(data: MedicalRecordCreateRequest): Promise<MedicalRecord> {
-  const res = await api.post('/v1/medical-records/create', data);
-  return res.data;
+// Get medical records for current patient (PATIENT only)
+export async function getMyMedicalRecords(): Promise<MedicalRecord[]> {
+  const response = await api.get<MedicalRecord[]>('/v1/medical-records/patient-admin/my')
+  return response.data
 }
 
-export async function updateMedicalRecord(id: number, data: MedicalRecordUpdateRequest): Promise<MedicalRecord> {
-  const res = await api.put(`/v1/medical-records/update/${id}`, data);
-  return res.data;
+// Search medical records (ADMIN only)
+export async function searchMedicalRecords(query: string): Promise<MedicalRecord[]> {
+  const response = await api.get<MedicalRecord[]>(`/v1/medical-records/searchList?q=${encodeURIComponent(query)}`)
+  return response.data
 }
 
-export async function searchMedicalRecords(
-  criteria: MedicalRecordSearchCriteria = {},
-  page = 0,
-  size = 20
-): Promise<MedicalRecordListResponse> {
-  const res = await api.get('/v1/medical-records/searchList', {
-    params: {
-      ...criteria,
-      page,
-      size
-    }
-  });
-  return res.data;
+// Get medical record by ID
+export async function getMedicalRecordById(id: number): Promise<MedicalRecord> {
+  const response = await api.get<MedicalRecord>(`/v1/medical-records/${id}`)
+  return response.data
 }
 
-export async function getDoctorMedicalRecords(doctorId: number): Promise<MedicalRecord[]> {
-  const res = await api.get(`/v1/medical-records/doctor/${doctorId}`);
-  return res.data;
+// Get medical records by doctor (DOCTOR only)
+export async function getMedicalRecordsByDoctor(doctorId: number): Promise<MedicalRecord[]> {
+  const response = await api.get<MedicalRecord[]>(`/v1/medical-records/doctor/${doctorId}`)
+  return response.data
 }
 
-export async function deactivateMedicalRecord(id: number): Promise<void> {
-  await api.put(`/v1/medical-records/${id}/deactivate`);
+// Get medical records by date range
+export async function getMedicalRecordsByDateRange(startDate: string, endDate: string): Promise<MedicalRecord[]> {
+  const response = await api.get<MedicalRecord[]>(`/v1/medical-records/range?start=${startDate}&end=${endDate}`)
+  return response.data
 }
-

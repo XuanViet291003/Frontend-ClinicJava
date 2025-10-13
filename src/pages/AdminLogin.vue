@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <AuthCard title="Admin Portal">
+  <div class="min-h-screen flex items-center justify-center bg-gray-100">    <AuthCard title="Admin Portal">
+ate>
 
       <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 
@@ -47,4 +47,16 @@ const handleLogin = async () => {
     loading.value = false
   }
 }
-</script>
+</script> = await login(form.value.username, form.value.password)
+    if (response.role === 'ADMIN') {
+      router.push('/admin/dashboard')
+    } else {
+      error.value = 'Invalid admin credentials'
+    }
+  } catch (e) {
+    error.value = 'Invalid credentials'
+  } finally {
+    loading.value = false
+  }
+}
+&lt;/script>

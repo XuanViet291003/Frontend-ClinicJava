@@ -1,173 +1,494 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="lg:flex lg:items-center lg:justify-between mb-6">
-          <div class="min-w-0 flex-1">
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:tracking-tight">Create Account</h2>
-          </div>
-        </div>
+  <div class="create-account-page">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Tạo tài khoản mới</h1>
+      <router-link to="/admin/accounts" class="btn btn--outline">
+        <i class="fas fa-arrow-left"></i>
+        Quay lại
+      </router-link>
+    </div>
 
-        <div class="bg-white shadow sm:rounded-lg">
-          <div class="px-4 py-5 sm:p-6">
-            <form @submit.prevent="handleSubmit">
-              <div class="grid grid-cols-1 gap-6">
-                <div>
-                  <TextField v-model="form.username" label="Username" :error="errors.username" required autofocus @blur="validateUsername" />
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <TextField v-model="form.firstName" label="First Name" :error="errors.firstName" required @blur="validateFirstName" />
-                  </div>
-                  <div>
-                    <TextField v-model="form.lastName" label="Last Name" :error="errors.lastName" required @blur="validateLastName" />
-                  </div>
-                </div>
-
-                <div>
-                  <TextField v-model="form.email" type="email" label="Email" :error="errors.email" required @blur="validateEmail" />
-                </div>
-
-                <div>
-                  <TextField type="password" v-model="form.password" label="Password" :error="errors.password" required @blur="validatePassword" />
-                  <p class="mt-1 text-sm text-gray-500">Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.</p>
-                </div>
-
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select v-model="form.role" class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm" required>
-                    <option value="DOCTOR">Doctor</option>
-                    <option value="PATIENT">Patient</option>
-                  </select>
-                </div>
-
-                <div v-if="serverError" class="rounded-md bg-red-50 p-4">
-                  <div class="flex">
-                    <div class="ml-3">
-                      <h3 class="text-sm font-medium text-red-800">{{ serverError }}</h3>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex justify-end">
-                  <PrimaryButton type="submit" :disabled="loading || !isValid" class="w-full md:w-auto">
-                    <svg v-if="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {{ loading ? 'Creating Account...' : 'Create Account' }}
-                  </PrimaryButton>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+    <!-- Account Form -->
+    <div class="card">
+      <div class="card__header">
+        <h2 class="card__title">Thông tin tài khoản</h2>
       </div>
+      
+      <form @submit.prevent="submitAccount" class="account-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Họ *</label>
+            <input 
+              v-model="form.firstName" 
+              class="form-control"
+              :class="{ 'form-control--error': errors.firstName }"
+              placeholder="Nhập họ"
+              required
+            >
+            <div v-if="errors.firstName" class="form-error">{{ errors.firstName }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tên *</label>
+            <input 
+              v-model="form.lastName" 
+              class="form-control"
+              :class="{ 'form-control--error': errors.lastName }"
+              placeholder="Nhập tên"
+              required
+            >
+            <div v-if="errors.lastName" class="form-error">{{ errors.lastName }}</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tên đăng nhập *</label>
+            <input 
+              v-model="form.username" 
+              class="form-control"
+              :class="{ 'form-control--error': errors.username }"
+              placeholder="Nhập tên đăng nhập"
+              required
+            >
+            <div v-if="errors.username" class="form-error">{{ errors.username }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email *</label>
+            <input 
+              v-model="form.email" 
+              type="email"
+              class="form-control"
+              :class="{ 'form-control--error': errors.email }"
+              placeholder="Nhập email"
+              required
+            >
+            <div v-if="errors.email" class="form-error">{{ errors.email }}</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Mật khẩu *</label>
+            <input 
+              v-model="form.password" 
+              type="password"
+              class="form-control"
+              :class="{ 'form-control--error': errors.password }"
+              placeholder="Nhập mật khẩu"
+              required
+            >
+            <div v-if="errors.password" class="form-error">{{ errors.password }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Xác nhận mật khẩu *</label>
+            <input 
+              v-model="form.confirmPassword" 
+              type="password"
+              class="form-control"
+              :class="{ 'form-control--error': errors.confirmPassword }"
+              placeholder="Nhập lại mật khẩu"
+              required
+            >
+            <div v-if="errors.confirmPassword" class="form-error">{{ errors.confirmPassword }}</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Vai trò *</label>
+            <select 
+              v-model="form.role" 
+              class="form-control"
+              :class="{ 'form-control--error': errors.role }"
+              required
+            >
+              <option value="">Chọn vai trò</option>
+              <option value="ADMIN">Quản trị viên</option>
+              <option value="DOCTOR">Bác sĩ</option>
+              <option value="PATIENT">Bệnh nhân</option>
+            </select>
+            <div v-if="errors.role" class="form-error">{{ errors.role }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Trạng thái</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input 
+                  v-model="form.isActive" 
+                  type="checkbox"
+                >
+                <span class="checkbox-text">Tài khoản hoạt động</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Summary -->
+        <div v-if="form.firstName && form.lastName && form.role" class="account-summary">
+          <h3>Xác nhận thông tin</h3>
+          <div class="summary-content">
+            <div class="summary-item">
+              <i class="fas fa-user"></i>
+              <span>{{ form.firstName }} {{ form.lastName }}</span>
+            </div>
+            <div class="summary-item">
+              <i class="fas fa-at"></i>
+              <span>{{ form.username || 'Chưa nhập' }}</span>
+            </div>
+            <div class="summary-item">
+              <i class="fas fa-envelope"></i>
+              <span>{{ form.email || 'Chưa nhập' }}</span>
+            </div>
+            <div class="summary-item">
+              <i class="fas fa-user-tag"></i>
+              <span>{{ getRoleText(form.role) }}</span>
+            </div>
+            <div class="summary-item">
+              <i class="fas fa-toggle-on" :class="{ 'fa-toggle-off': !form.isActive }"></i>
+              <span>{{ form.isActive ? 'Hoạt động' : 'Không hoạt động' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <router-link to="/admin/accounts" class="btn btn--secondary">
+            Hủy
+          </router-link>
+          <button 
+            type="submit" 
+            class="btn btn--primary"
+            :disabled="loading || !isFormValid"
+          >
+            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+            {{ loading ? 'Đang tạo...' : 'Tạo tài khoản' }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Success Message -->
+    <div v-if="successMessage" class="alert alert--success">
+      <i class="fas fa-check-circle"></i>
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="alert alert--error">
+      <i class="fas fa-exclamation-circle"></i>
+      {{ errorMessage }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import TextField from '../../components/TextField.vue'
-import PrimaryButton from '../../components/PrimaryButton.vue'
-import * as accountService from '../../lib/account'
-import type { AccountCreateRequest } from '../../lib/account'
-
-interface FormData {
-  username: string
-  firstName: string
-  lastName: string
-  email: string
-  password: string
-  role: 'DOCTOR' | 'PATIENT'
-}
-
-interface FormErrors {
-  username?: string
-  firstName?: string
-  lastName?: string
-  email?: string
-  password?: string
-}
+import { createAccount, type CreateAccountRequest } from '../../lib/account'
 
 const router = useRouter()
-const loading = ref(false)
-const serverError = ref('')
 
-const form = ref<FormData>({
-  username: '',
+// State
+const loading = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+
+// Form data
+const form = ref({
   firstName: '',
   lastName: '',
+  username: '',
   email: '',
   password: '',
-  role: 'PATIENT'
+  confirmPassword: '',
+  role: '',
+  isActive: true
 })
 
-const errors = ref<FormErrors>({})
+// Form errors
+const errors = ref({
+  firstName: '',
+  lastName: '',
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  role: ''
+})
 
-const validateUsername = () => {
-  const value = form.value.username.trim()
-  if (!value) errors.value.username = 'Username is required'
-  else if (value.length < 3) errors.value.username = 'Username must be at least 3 characters'
-  else if (!/^[a-zA-Z0-9_]+$/.test(value)) errors.value.username = 'Username can only contain letters, numbers, and underscores'
-  else errors.value.username = undefined
+// Computed
+const isFormValid = computed(() => {
+  return form.value.firstName.trim() && 
+         form.value.lastName.trim() && 
+         form.value.username.trim() && 
+         form.value.email.trim() && 
+         form.value.password.trim() && 
+         form.value.confirmPassword.trim() && 
+         form.value.role &&
+         form.value.password === form.value.confirmPassword
+})
+
+// Methods
+const validateForm = () => {
+  errors.value = {
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: ''
+  }
+
+  let isValid = true
+
+  if (!form.value.firstName.trim()) {
+    errors.value.firstName = 'Vui lòng nhập họ'
+    isValid = false
+  }
+
+  if (!form.value.lastName.trim()) {
+    errors.value.lastName = 'Vui lòng nhập tên'
+    isValid = false
+  }
+
+  if (!form.value.username.trim()) {
+    errors.value.username = 'Vui lòng nhập tên đăng nhập'
+    isValid = false
+  } else if (form.value.username.length < 3) {
+    errors.value.username = 'Tên đăng nhập phải có ít nhất 3 ký tự'
+    isValid = false
+  }
+
+  if (!form.value.email.trim()) {
+    errors.value.email = 'Vui lòng nhập email'
+    isValid = false
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
+    errors.value.email = 'Email không hợp lệ'
+    isValid = false
+  }
+
+  if (!form.value.password.trim()) {
+    errors.value.password = 'Vui lòng nhập mật khẩu'
+    isValid = false
+  } else if (form.value.password.length < 6) {
+    errors.value.password = 'Mật khẩu phải có ít nhất 6 ký tự'
+    isValid = false
+  }
+
+  if (!form.value.confirmPassword.trim()) {
+    errors.value.confirmPassword = 'Vui lòng xác nhận mật khẩu'
+    isValid = false
+  } else if (form.value.password !== form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Mật khẩu xác nhận không khớp'
+    isValid = false
+  }
+
+  if (!form.value.role) {
+    errors.value.role = 'Vui lòng chọn vai trò'
+    isValid = false
+  }
+
+  return isValid
 }
 
-const validateFirstName = () => {
-  const value = form.value.firstName.trim()
-  if (!value) errors.value.firstName = 'First name is required'
-  else if (value.length < 2) errors.value.firstName = 'First name must be at least 2 characters'
-  else errors.value.firstName = undefined
-}
+const submitAccount = async () => {
+  if (!validateForm()) {
+    return
+  }
 
-const validateLastName = () => {
-  const value = form.value.lastName.trim()
-  if (!value) errors.value.lastName = 'Last name is required'
-  else if (value.length < 2) errors.value.lastName = 'Last name must be at least 2 characters'
-  else errors.value.lastName = undefined
-}
-
-const validateEmail = () => {
-  const value = form.value.email.trim()
-  if (!value) errors.value.email = 'Email is required'
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) errors.value.email = 'Please enter a valid email address'
-  else errors.value.email = undefined
-}
-
-const validatePassword = () => {
-  const value = form.value.password
-  if (!value) errors.value.password = 'Password is required'
-  else if (value.length < 8) errors.value.password = 'Password must be at least 8 characters'
-  else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(value)) errors.value.password = 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-  else errors.value.password = undefined
-}
-
-const validateForm = () => { validateUsername(); validateFirstName(); validateLastName(); validateEmail(); validatePassword(); }
-
-const isValid = computed(() => !errors.value.username && !errors.value.firstName && !errors.value.lastName && !errors.value.email && !errors.value.password && form.value.username && form.value.firstName && form.value.lastName && form.value.email && form.value.password)
-
-const handleSubmit = async () => {
-  validateForm()
-  if (!isValid.value) return
   try {
     loading.value = true
-    serverError.value = ''
-    const payload: AccountCreateRequest = {
+    errorMessage.value = ''
+    successMessage.value = ''
+
+    const accountData: CreateAccountRequest = {
+      firstName: form.value.firstName.trim(),
+      lastName: form.value.lastName.trim(),
       username: form.value.username.trim(),
-      password: form.value.password,
-      fullName: `${form.value.firstName.trim()} ${form.value.lastName.trim()}`.trim(),
       email: form.value.email.trim(),
-      role: form.value.role
+      password: form.value.password,
+      role: form.value.role as 'ADMIN' | 'DOCTOR' | 'PATIENT'
     }
-    await accountService.createAccount(payload)
-    router.push('/admin/accounts')
-  } catch (e) {
-    serverError.value = e instanceof Error ? e.message : 'Failed to create account. Please try again.'
+
+    await createAccount(accountData)
+
+    successMessage.value = 'Tạo tài khoản thành công!'
+    
+    // Reset form
+    form.value = {
+      firstName: '',
+      lastName: '',
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: '',
+      isActive: true
+    }
+
+    // Redirect to accounts list after 2 seconds
+    setTimeout(() => {
+      router.push('/admin/accounts')
+    }, 2000)
+
+  } catch (error: any) {
+    console.error('Failed to create account:', error)
+    errorMessage.value = error?.response?.data?.message || 'Có lỗi xảy ra khi tạo tài khoản'
   } finally {
     loading.value = false
   }
 }
+
+const getRoleText = (role: string) => {
+  switch (role) {
+    case 'ADMIN': return 'Quản trị viên'
+    case 'DOCTOR': return 'Bác sĩ'
+    case 'PATIENT': return 'Bệnh nhân'
+    default: return role
+  }
+}
+
+// Watch for form changes to clear errors
+watch(form, () => {
+  if (errorMessage.value) {
+    errorMessage.value = ''
+  }
+}, { deep: true })
 </script>
+
+<style scoped>
+.create-account-page {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-text {
+  font-size: 14px;
+  color: #495057;
+}
+
+.account-summary {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border-left: 4px solid #007bff;
+}
+
+.account-summary h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.summary-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #495057;
+}
+
+.summary-item i {
+  color: #007bff;
+  width: 16px;
+}
+
+.summary-item .fa-toggle-off {
+  color: #6c757d;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.alert i {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+}
+</style>

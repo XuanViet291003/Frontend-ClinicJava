@@ -1,75 +1,84 @@
-import api from './api';
-
-export interface AccountCreateRequest {
-  username: string;
-  password: string;
-  fullName: string;
-  email?: string;
-  phone?: string;
-  role: 'ADMIN' | 'DOCTOR' | 'PATIENT';
-}
-
-export interface AccountUpdateRequest {
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  password?: string;
-  isActive?: boolean;
-}
+import api from './api'
 
 export interface Account {
-  id: number;
-  username: string;
-  fullName: string;
-  email?: string;
-  phone?: string;
-  role: 'ADMIN' | 'DOCTOR' | 'PATIENT';
-  isActive: boolean;
-  createdBy?: number;
-  createdDate: string;
-  modifiedBy?: number;
-  modifiedDate: string;
+  id: number
+  username: string
+  email: string
+  firstName: string
+  lastName: string
+  role: 'ADMIN' | 'DOCTOR' | 'PATIENT'
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
 }
 
-export interface AccountListResponse {
-  content: Account[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+export interface CreateAccountRequest {
+  username: string
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+  role: 'ADMIN' | 'DOCTOR' | 'PATIENT'
 }
 
-// List accounts (paginated)
-export async function listAccounts(page = 0, size = 10): Promise<AccountListResponse> {
-  const res = await api.get('/v1/account/list', { params: { page, size } });
-  return res.data;
+export interface UpdateAccountRequest {
+  email?: string
+  firstName?: string
+  lastName?: string
+  password?: string
+  role?: 'ADMIN' | 'DOCTOR' | 'PATIENT'
+  isActive?: boolean
 }
 
-// Create an account (admin side)
-export async function createAccount(req: AccountCreateRequest): Promise<Account> {
-  const res = await api.post('/v1/account/create', req);
-  return res.data;
+// Get all accounts (ADMIN only)
+export async function getAccounts(): Promise<Account[]> {
+  const response = await api.get<Account[]>('/v1/account/list')
+  return response.data
 }
 
-// Update account by id
-export async function updateAccount(id: number, payload: AccountUpdateRequest): Promise<Account> {
-  const res = await api.put(`/v1/account/update/${id}`, payload);
-  return res.data;
-}
-
-// Delete account by id
-export async function deleteAccount(id: number): Promise<void> {
-  await api.delete(`/v1/account/delete/${id}`);
-}
-
-// Get account by id
+// Get account by ID (ADMIN only)
 export async function getAccountById(id: number): Promise<Account> {
-  const res = await api.get(`/v1/account/find/${id}`);
-  return res.data;
+  const response = await api.get<Account>(`/v1/account/findById/${id}`)
+  return response.data
 }
 
-// Toggle account active status
-export async function toggleAccountStatus(id: number): Promise<Account> {
-  const account = await getAccountById(id);
-  return updateAccount(id, { isActive: !account.isActive });
+// Create new account (ADMIN only)
+export async function createAccount(data: CreateAccountRequest): Promise<Account> {
+  const response = await api.post<Account>('/v1/account/create', data)
+  return response.data
+}
+
+// Update account (ADMIN only)
+export async function updateAccount(id: number, data: UpdateAccountRequest): Promise<Account> {
+  const response = await api.put<Account>(`/v1/account/update/${id}`, data)
+  return response.data
+}
+
+// Delete account (ADMIN only)
+export async function deleteAccount(id: number): Promise<void> {
+  await api.delete(`/v1/account/delete/${id}`)
+}
+
+// Get patients (DOCTOR/ADMIN only)
+export async function getPatients(): Promise<Account[]> {
+  const response = await api.get<Account[]>('/v1/patients/list')
+  return response.data
+}
+
+// Get doctors (ADMIN only)
+export async function getDoctors(): Promise<Account[]> {
+  const response = await api.get<Account[]>('/v1/doctors/list')
+  return response.data
+}
+
+// Search accounts (ADMIN only)
+export async function searchAccounts(query: string): Promise<Account[]> {
+  const response = await api.get<Account[]>(`/v1/account/search?q=${encodeURIComponent(query)}`)
+  return response.data
+}
+
+// Get accounts by role (ADMIN only)
+export async function getAccountsByRole(role: 'ADMIN' | 'DOCTOR' | 'PATIENT'): Promise<Account[]> {
+  const response = await api.get<Account[]>(`/v1/account/role/${role}`)
+  return response.data
 }
