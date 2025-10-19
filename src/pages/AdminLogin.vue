@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-100">    <AuthCard title="Admin Portal">
-ate>
 
       <div v-if="error" class="mb-4 text-sm text-red-600">{{ error }}</div>
 

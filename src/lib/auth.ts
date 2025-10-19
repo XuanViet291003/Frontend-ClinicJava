@@ -39,6 +39,7 @@ interface RegisterRequest {
 	firstName?: string
 	lastName?: string
 	role?: UserRole
+	fullName?: string
 }
 
 const AUTH_TOKEN_KEY = 'token' // matches api.ts interceptor
@@ -208,7 +209,6 @@ export function useAuth() {
 			try {
 				loadingRef.value = true
 				errorRef.value = ''
-				await api.post('/v1/auth/logout')
 				const lastRole = userRef.value?.role
 				userRef.value = null
 				localStorage.removeItem(AUTH_TOKEN_KEY)
@@ -221,6 +221,15 @@ export function useAuth() {
 		} finally {
 			loadingRef.value = false
 		}
+		try {
+			await api.post('/v1/auth/logout')
+		} catch (e: any) {
+			// Do nothing, it's fineeeee
+			// errorRef.value = e?.response?.data?.message || e?.message || 'Failed to logout'
+			// throw e
+		}
+
+
 	}
 
 	// Periodic token expiration check

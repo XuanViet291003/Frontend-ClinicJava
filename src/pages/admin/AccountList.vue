@@ -30,7 +30,7 @@
 
         <div class="filter-group">
           <label class="form-label">Vai trò</label>
-          <select v-model="filters.role" @change="applyFilters" class="form-control">
+          <select v-model="filters.roleName" @change="applyFilters" class="form-control">
             <option value="">Tất cả</option>
             <option value="ADMIN">Quản trị viên</option>
             <option value="DOCTOR">Bác sĩ</option>
@@ -104,9 +104,9 @@
               <td>
                 <span 
                   class="role-badge"
-                  :class="`role-badge--${account.role.toLowerCase()}`"
+                  :class="`role-badge--${(getRoleText(account.roleId) ?? '').toLowerCase()}`"
                 >
-                  {{ getRoleText(account.role) }}
+                  {{ getRoleText(account.roleId) ?? '' }}
                 </span>
               </td>
               <td>
@@ -213,9 +213,9 @@
                   <label>Vai trò:</label>
                   <span 
                     class="role-badge"
-                    :class="`role-badge--${selectedAccount.role.toLowerCase()}`"
+                    :class="`role-badge--${selectedAccount.roleName.toLowerCase()}`"
                   >
-                    {{ getRoleText(selectedAccount.role) }}
+                    {{ getRoleText(selectedAccount.roleid) }}
                   </span>
                 </div>
                 <div class="detail-item">
@@ -297,7 +297,7 @@
             <div class="form-group">
               <label class="form-label">Vai trò *</label>
               <select 
-                v-model="editForm.role" 
+                v-model="editForm.roleName" 
                 class="form-control"
                 :class="{ 'form-control--error': errors.role }"
                 required
@@ -369,7 +369,7 @@ const itemsPerPage = 10
 // Filters
 const filters = ref({
   search: '',
-  role: '',
+  roleName: '',
   status: ''
 })
 
@@ -378,7 +378,8 @@ const editForm = ref<UpdateAccountRequest & { id?: number }>({
   firstName: '',
   lastName: '',
   email: '',
-  role: 'PATIENT',
+  roleid: 0,
+  roleName: '',
   password: '',
   isActive: true
 })
@@ -407,8 +408,8 @@ const filteredAccounts = computed(() => {
   }
 
   // Filter by role
-  if (filters.value.role) {
-    filtered = filtered.filter(account => account.role === filters.value.role)
+  if (filters.value.roleName) {
+    filtered = filtered.filter(account => account.roleName === filters.value.roleName)
   }
 
   // Filter by status
@@ -427,7 +428,7 @@ const totalPages = computed(() =>
 const paginatedAccounts = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
-  return filteredAccounts.value.slice(start, end)
+  return ((filteredAccounts.value as any).data ?? []).slice(start, end)
 })
 
 // Methods
@@ -453,7 +454,7 @@ const applyFilters = () => {
 const clearFilters = () => {
   filters.value = {
     search: '',
-    role: '',
+    roleName: '',
     status: ''
   }
   currentPage.value = 1
@@ -473,7 +474,7 @@ const editAccount = (account: Account) => {
     firstName: account.firstName,
     lastName: account.lastName,
     email: account.email,
-    role: account.role,
+    roleid: account.roleid,
     password: '',
     isActive: account.isActive
   }
@@ -489,7 +490,7 @@ const saveAccount = async () => {
       firstName: editForm.value.firstName,
       lastName: editForm.value.lastName,
       email: editForm.value.email,
-      role: editForm.value.role,
+      roleid: editForm.value.roleid,
       isActive: editForm.value.isActive
     }
 
@@ -542,7 +543,8 @@ const closeEditModal = () => {
     firstName: '',
     lastName: '',
     email: '',
-    role: 'PATIENT',
+    roleid: 0,
+    roleName: '',
     password: '',
     isActive: true
   }
@@ -554,12 +556,12 @@ const closeEditModal = () => {
   }
 }
 
-const getRoleText = (role: string) => {
+const getRoleText = (role: number) => {
   switch (role) {
-    case 'ADMIN': return 'Quản trị viên'
-    case 'DOCTOR': return 'Bác sĩ'
-    case 'PATIENT': return 'Bệnh nhân'
-    default: return role
+    case 1: return 'Bệnh nhân'
+    case 2: return 'Bác sĩ'
+    case 3: return 'Quản trị viên'
+    default: return 'Không xác định'
   }
 }
 

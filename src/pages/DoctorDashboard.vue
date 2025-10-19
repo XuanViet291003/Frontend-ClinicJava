@@ -176,9 +176,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../../lib/auth'
-import { getAppointments } from '../../lib/appointments'
-import { getPatients } from '../../lib/account'
+import { useAuth } from '../lib/auth'
+import { getAppointments , type TodayAppointments ,type RecentPatients } from '../lib/appointments'
+import { getPatients } from '../lib/account'
 
 const router = useRouter()
 const { user } = useAuth()
@@ -191,8 +191,8 @@ const stats = ref({
   totalPatients: 0,
   totalRecords: 0
 })
-const todayAppointments = ref([])
-const recentPatients = ref([])
+const todayAppointments = ref<TodayAppointments[]>([])
+const recentPatients = ref<RecentPatients[]>([])
 
 // Methods
 const loadDashboardData = async () => {
@@ -204,7 +204,15 @@ const loadDashboardData = async () => {
     const today = new Date().toDateString()
     todayAppointments.value = appointments.filter(apt => 
       new Date(apt.appointmentDate).toDateString() === today
-    )
+    ).map(x => {
+      return {
+        id: x.id,
+        appointmentDate: x.appointmentDate,
+        patientName: x.patientName ?? '',
+        reason: x.reason,
+        status: x.status
+      }
+    })
     
     // Load patients
     const patients = await getPatients()

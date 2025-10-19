@@ -6,9 +6,13 @@ const router = useRouter();
 const token = ref(localStorage.getItem('token'));
 
 function logout() {
-  localStorage.removeItem('token');
-  token.value = null;
-  router.replace('/login');
+  console.log('this?')
+  // localStorage.removeItem('token');
+  // token.value = null;
+  router.replace('/login').then(() => {
+    localStorage.removeItem('token');
+    token.value = null;
+  });
 }
 function goAppointments(){
   router.push('/appointments');

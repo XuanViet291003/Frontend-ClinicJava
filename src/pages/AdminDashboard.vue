@@ -13,7 +13,7 @@
               <select v-model="filterStatus" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6">
                 <option value="">All Status</option>
                 <option value="PENDING">Pending</option>
-                <option value="IN_PROGRESS">In Progress</option>
+                <option value="CONFIRMED">In Progress</option> 
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
               </select>
@@ -57,7 +57,7 @@
                         <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium"
                           :class="{
                             'bg-yellow-50 text-yellow-700 ring-1 ring-yellow-700/10': appointment.status === 'PENDING',
-                            'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10': appointment.status === 'IN_PROGRESS',
+                            'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10': appointment.status === 'CONFIRMED', 
                             'bg-green-50 text-green-700 ring-1 ring-green-700/10': appointment.status === 'COMPLETED',
                             'bg-red-50 text-red-700 ring-1 ring-red-700/10': appointment.status === 'CANCELLED'
                           }"
@@ -69,8 +69,8 @@
                       <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                         <div class="flex justify-end gap-2">
                           <button v-if="appointment.status === 'PENDING'" @click="startAppointment(appointment)" class="text-blue-600 hover:text-blue-900">Start</button>
-                          <button v-if="appointment.status === 'IN_PROGRESS'" @click="completeAppointment(appointment)" class="text-green-600 hover:text-green-900">Complete</button>
-                          <button v-if="['PENDING', 'IN_PROGRESS'].includes(appointment.status)" @click="confirmCancel(appointment)" class="text-red-600 hover:text-red-900">Cancel</button>
+                          <button v-if="appointment.status === 'CONFIRMED'" @click="completeAppointment(appointment)" class="text-green-600 hover:text-green-900">Complete</button>
+                          <button v-if="['PENDING', 'CONFIRMED'].includes(appointment.status)" @click="confirmCancel(appointment)" class="text-red-600 hover:text-red-900">Cancel</button>
                         </div>
                       </td>
                     </tr>
@@ -109,53 +109,152 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import * as appointmentService from '../../lib/appointments';
+// import { getTodayAppointments }  from '../lib/appointments';
+import * as appointmentService from '../lib/appointments';
+import {getAppointments} from '../lib/appointments';
 
-type AppointmentStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-interface Appointment { id: number; appointmentDate: string; patientName: string; patientAge: number; status: AppointmentStatus; note?: string }
+type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+
+interface Appointment {
+  id: number;
+  patientId: number;
+  doctorId: number;
+  patientName: string;
+  patientAge: number;
+  appointmentDate: string; 
+  status: AppointmentStatus;
+  note?: string; 
+  fee: number; 
+  createdAt: string; 
+
+}
+
 
 const appointments = ref<Appointment[]>([]);
 const loading = ref(false);
 const error = ref('');
-const filterStatus = ref('');
+const filterStatus = ref(''); 
 const showCancelConfirmation = ref(false);
 const selectedAppointment = ref<Appointment | null>(null);
 
 let updateInterval: number | null = null;
 
-const filteredAppointments = computed(() => filterStatus.value ? appointments.value.filter(a => a.status === filterStatus.value) : appointments.value);
+
+const filteredAppointments = computed(() => {
+  return filterStatus.value
+    ? appointments.value.filter(a => a.status === filterStatus.value)
+    : appointments.value;
+});
+
 
 const formatTime = (date: string) => new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-const formatStatus = (status: AppointmentStatus) => ({ PENDING:'Pending', IN_PROGRESS:'In Progress', COMPLETED:'Completed', CANCELLED:'Cancelled' } as Record<AppointmentStatus,string>)[status] || status;
+
+
+const formatStatus = (status: AppointmentStatus) => {
+  const statusMap: Record<AppointmentStatus, string> = {
+    PENDING: 'Pending',
+    CONFIRMED: 'In Progress',
+    COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled'
+  };
+  return statusMap[status] || status; 
+};
+
 const truncateText = (text: string, length: number) => text.length > length ? text.substring(0, length) + '...' : text;
+
 
 async function fetchAppointments() {
   try {
     loading.value = true;
     error.value = '';
-    const allAppointments = await appointmentService.getAppointments();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
+    // GỌI HÀM ĐÚNG: Chỉ lấy dữ liệu của ngày hôm nay từ server
+    const todayAppointments = await getAppointments(); 
 
-    appointments.value = allAppointments.filter(apt => {
-      const aptDate = new Date(apt.appointmentDate);
-      return aptDate.toDateString() === today.toDateString();
-    });
+    // Bây giờ bạn không cần lọc nữa, chỉ cần map dữ liệu
+    appointments.value = todayAppointments.map(apt => ({
+      id: apt.id,
+      patientId: apt.patientId,
+      doctorId: apt.doctorId,
+      patientName: apt.patientName || 'Unknown Patient',
+      patientAge: apt.patientAge || 0,
+      appointmentDate: apt.appointmentDate,
+      status: apt.status as AppointmentStatus,
+      note: apt.note || 'No notes',
+      fee: apt.fee || 0,
+      createdAt: apt.createdAt,
+    }));
   } catch (e) {
+    console.error("Failed to load appointments:", e);
     error.value = e instanceof Error ? e.message : 'Failed to load appointments';
   } finally {
     loading.value = false;
   }
 }
 
-function startAppointment(appt: Appointment) { appt.status = 'IN_PROGRESS'; }
-function completeAppointment(appt: Appointment) { appt.status = 'COMPLETED'; }
-function confirmCancel(appt: Appointment) { selectedAppointment.value = appt; showCancelConfirmation.value = true; }
-function cancelAppointment() { if (selectedAppointment.value) selectedAppointment.value.status = 'CANCELLED'; showCancelConfirmation.value = false; selectedAppointment.value = null; }
 
-function startRealTimeUpdates() { updateInterval = window.setInterval(fetchAppointments, 30000); }
 
-onMounted(() => { fetchAppointments(); startRealTimeUpdates(); });
+async function startAppointment(appt: Appointment) {
+  try {
+    const updatedAppt = await appointmentService.updateAppointment(appt.id, { status: 'CONFIRMED' });
+    const index = appointments.value.findIndex(a => a.id === appt.id);
+    if (index !== -1) {
+      appointments.value[index].status = updatedAppt.status as AppointmentStatus;
+    }
+  } catch (e) {
+    console.error("Failed to start appointment:", e);
+    error.value = "Failed to start appointment.";
+  }
+}
 
-onUnmounted(() => { if (updateInterval) clearInterval(updateInterval); });
+async function completeAppointment(appt: Appointment) {
+  try {
+    const updatedAppt = await appointmentService.completeAppointment(appt.id);
+    const index = appointments.value.findIndex(a => a.id === appt.id);
+    if (index !== -1) {
+      appointments.value[index].status = updatedAppt.status as AppointmentStatus;
+    }
+  } catch (e) {
+    console.error("Failed to complete appointment:", e);
+    error.value = "Failed to complete appointment.";
+  }
+}
+
+function confirmCancel(appt: Appointment) {
+  selectedAppointment.value = appt;
+  showCancelConfirmation.value = true;
+}
+
+async function cancelAppointment() {
+  if (selectedAppointment.value) {
+    try {
+      await appointmentService.cancelAppointment(selectedAppointment.value.id);
+      const index = appointments.value.findIndex(a => a.id === selectedAppointment.value!.id);
+      if (index !== -1) {
+        appointments.value[index].status = 'CANCELLED';
+      }
+      showCancelConfirmation.value = false;
+      selectedAppointment.value = null;
+    } catch (e) {
+      console.error("Failed to cancel appointment:", e);
+      error.value = "Failed to cancel appointment.";
+    }
+  }
+}
+
+
+function startRealTimeUpdates() {
+  updateInterval = window.setInterval(fetchAppointments, 30000); // Cập nhật mỗi 30 giây
+}
+
+
+onMounted(() => {
+  fetchAppointments();
+  startRealTimeUpdates();
+});
+
+onUnmounted(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval);
+  }
+});
 </script>

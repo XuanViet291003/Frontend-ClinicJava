@@ -8,9 +8,43 @@ export interface Appointment {
   reason: string
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
   patientName?: string
+  patientAge?: number
   doctorName?: string
   createdAt: string
   updatedAt: string
+  patientNote?: string
+  fee: number
+  note: string
+}
+export interface TodayAppointments {
+  id: number;
+  appointmentDate: string; // Vẫn là string
+  patientName: string;
+  reason: string;
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  // Thêm các thuộc tính khác nếu cần hiển thị trong danh sách lịch hẹn
+}
+
+// Interface cho bệnh nhân gần đây
+export interface RecentPatients {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  lastVisit: string; // Vẫn là string
+  // Thêm các thuộc tính khác nếu cần hiển thị trong danh sách bệnh nhân
+}
+
+export interface CreateAppointmentRequest {
+  doctorId: number
+  appointmentDate: string
+  reason: string
+}
+
+export interface UpdateAppointmentRequest {
+  status?: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+  reason?: string
+  appointmentDate?: string
 }
 
 export interface CreateAppointmentRequest {
@@ -62,16 +96,16 @@ export async function cancelAppointment(id: number): Promise<Appointment> {
 }
 
 // Get appointments by date range
-export async function getAppointmentsByDateRange(startDate: string, endDate: string): Promise<Appointment[]> {
-  const response = await api.get<Appointment[]>(`/v1/appointments/range?start=${startDate}&end=${endDate}`)
-  return response.data
-}
+// export async function getAppointmentsByDateRange(startDate: string, endDate: string): Promise<Appointment[]> {
+//   const response = await api.get<Appointment[]>(`/v1/appointments/range?start=${startDate}&end=${endDate}`)
+//   return response.data
+// }
 
-// Get today's appointments (DOCTOR only)
-export async function getTodayAppointments(): Promise<Appointment[]> {
-  const today = new Date().toISOString().split('T')[0]
-  return getAppointmentsByDateRange(today, today)
-}
+// // Get today's appointments (DOCTOR only)
+// export async function getTodayAppointments(): Promise<Appointment[]> {
+//   const today = new Date().toISOString().split('T')[0]
+//   return getAppointmentsByDateRange(today, today)
+// }
 
 // Get appointments by doctor (DOCTOR only)
 export async function getAppointmentsByDoctor(doctorId: number): Promise<Appointment[]> {

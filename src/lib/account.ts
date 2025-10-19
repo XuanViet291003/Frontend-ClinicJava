@@ -1,4 +1,5 @@
 import api from './api'
+import type { RecentPatients } from './appointments'
 
 export interface Account {
   id: number
@@ -6,7 +7,8 @@ export interface Account {
   email: string
   firstName: string
   lastName: string
-  role: 'ADMIN' | 'DOCTOR' | 'PATIENT'
+  roleid: number
+  roleName: string
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -26,7 +28,8 @@ export interface UpdateAccountRequest {
   firstName?: string
   lastName?: string
   password?: string
-  role?: 'ADMIN' | 'DOCTOR' | 'PATIENT'
+  roleName?: string
+  roleid?: number
   isActive?: boolean
 }
 
@@ -60,14 +63,14 @@ export async function deleteAccount(id: number): Promise<void> {
 }
 
 // Get patients (DOCTOR/ADMIN only)
-export async function getPatients(): Promise<Account[]> {
-  const response = await api.get<Account[]>('/v1/patients/list')
+export async function getPatients(): Promise<any[]> {
+  const response = await api.get<any[]>('/v1/patients/list')
   return response.data
 }
 
 // Get doctors (ADMIN only)
-export async function getDoctors(): Promise<Account[]> {
-  const response = await api.get<Account[]>('/v1/doctors/list')
+export async function getDoctors(): Promise<any[]> {
+  const response = await api.get<any[]>('/v1/doctors/list')
   return response.data
 }
 

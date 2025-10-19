@@ -1,12 +1,13 @@
 import api from './api'
 
 export interface Notification {
-  id: number
+  noftificationId: number
+  acountId?: number
   title: string
   message: string
   type: 'INFO' | 'WARNING' | 'SUCCESS' | 'ERROR'
   isRead: boolean
-  userId?: number
+  sentDate: string
   createdAt: string
   updatedAt: string
 }
@@ -19,7 +20,7 @@ export interface BroadcastNotificationRequest {
 
 // Get my notifications
 export async function getNotifications(): Promise<Notification[]> {
-  const response = await api.get<Notification[]>('/v1/notifications/my')
+  const response = await api.get<Notification[]>('/v1/notification/my?size='+ 5 + '&page=' + 1)
   return response.data
 }
 

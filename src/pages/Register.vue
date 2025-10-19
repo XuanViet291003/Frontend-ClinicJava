@@ -28,8 +28,9 @@ async function submit() {
       username: username.value,
       password: password.value,
       email: email.value,
-      firstName: firstName || '',
-      lastName: lastName || ''
+      // firstName: firstName || '',
+      // lastName: lastName || ''
+      fullName: fullName.value
     });
     setTimeout(() => router.replace('/login'), 600);
   } catch (e: any) {
